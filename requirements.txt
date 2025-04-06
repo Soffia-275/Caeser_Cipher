@@ -1,0 +1,10 @@
+Flask==2.3.2
+pandas==2.2.3
+scikit-learn==1.6.1
+joblib==1.3.2
+
+
+
+# python -m venv caesar_env
+
+# source caesar_env/bin/activate
