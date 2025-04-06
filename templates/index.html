@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Caesar Cipher Decryptor</title>
+    <style>
+        body {
+            background-image: url("https://www.wallpaperflare.com/static/471/767/754/abstract-ae-plexus-blue-dot-wallpaper.jpg");
+            background-size: cover;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: rgba(30, 40, 60, 0.7);
+            border-radius: 25px;
+            padding: 40px;
+            width: 80%;
+            max-width: 700px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 40px auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        textarea {
+            width: calc(100% - 30px);
+            height: 150px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 1.1rem;
+            resize: none;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: cursive;
+            color: rgba(206, 249, 255, 0.85);
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            color: rgb(255, 255, 255);
+            font-family:inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--highlight-color);
+            box-shadow: 0 0 0 3px rgba(177, 218, 244, 0.2);
+        }
+
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+
+        button {
+            background-color: rgba(65, 76, 81, 0.7);
+            color: #b1daf4;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background-color: rgba(85, 96, 101, 0.8);
+            transform: translateY(-2px);
+        }
+
+        #results {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: aliceblue;
+            border-radius: 15px;
+            font-family: 'Times New Roman', Times, serif;
+            display: none;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: rgba(232, 208, 208, 0.95);
+            display: inline-block;
+            width: 120px;
+        }
+
+        #frequency-chart {
+            margin: 30px 0;
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+        }
+
+        #frequency-chart img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                width: 90%;
+            }
+            
+            textarea {
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Caesar Cipher Decryptor</h1>
+        
+        <textarea id="cipherText" placeholder="Enter cipher text here..."></textarea>
+        <button onclick="decryptText()">Decrypt</button>
+        
+        <div id="frequency-chart"></div>
+        
+        <div id="results">
+            <h2>Decryption Results</h2>
+            <div class="result-item">
+                <span class="result-label">Predicted Shift:</span>
+                <span id="predictedShift"></span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Decrypted Text:</span>
+                <span id="decryptedText"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function decryptText() {
+            const cipherText = document.getElementById('cipherText').value.trim();
+            if (!cipherText) {
+                alert('Please enter some cipher text');
+                return;
+            }
+
+            const button = document.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'Decrypting...';
+
+            fetch('/decrypt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ cipher_text: cipherText })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                
+                // Display results
+                document.getElementById('decryptedText').textContent = data.decrypted_text;
+                document.getElementById('predictedShift').textContent = data.predicted_shift;
+                document.getElementById('results').style.display = 'block';
+                
+                // Display frequency chart
+                const chartDiv = document.getElementById('frequency-chart');
+                chartDiv.innerHTML = `<img src="data:image/png;base64,${data.frequency_plot}" 
+                                     alt="Letter Frequency Chart">`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error during decryption: ' + error.message);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = 'Decrypt';
+            });
+        }
+    </script>
+</body>
+</html>
